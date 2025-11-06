@@ -1,0 +1,8 @@
+{
+  "client_id": "YOUR_CLIENT_ID",
+  "tenant_id": "YOUR_TENANT_ID_OR_COMMON",
+  "client_secret": "YOUR_CLIENT_SECRET",
+  "scopes": ["User.Read"],
+  "redirect_uri": "http://localhost:8000/getAToken",
+  "authority": "https://login.microsoftonline.com/YOUR_TENANT_ID_OR_COMMON"
+}

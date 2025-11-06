@@ -1,0 +1,12 @@
+{
+    "AccessToken": {},
+    "Account": {},
+    "IdToken": {},
+    "RefreshToken": {},
+    "AppMetadata": {
+        "appmetadata-login.microsoftonline.com-c7379904-73f3-4fe1-b4f5-eeb197ab1ecf": {
+            "client_id": "c7379904-73f3-4fe1-b4f5-eeb197ab1ecf",
+            "environment": "login.microsoftonline.com"
+        }
+    }
+}
