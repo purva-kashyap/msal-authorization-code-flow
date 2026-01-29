@@ -1,0 +1,45 @@
+# FastAPI SSO Authentication - Requirements
+# Production-ready dependencies for Microsoft Entra ID OAuth2 flow
+
+# Web Framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0  # ASGI server with auto-reload and performance features
+python-multipart==0.0.6    # Form data parsing
+
+# MSAL (Microsoft Authentication Library)
+msal==1.26.0
+
+# Database (Async PostgreSQL)
+sqlalchemy[asyncio]==2.0.25
+asyncpg==0.29.0            # Async PostgreSQL driver
+psycopg2-binary==2.9.9     # Sync driver for migrations/admin tasks
+
+# Security & Encryption
+cryptography==42.0.0       # Fernet encryption for tokens
+python-jose[cryptography]==3.3.0  # JWT handling (optional, for future use)
+
+# HTTP Client (Async)
+httpx==0.26.0              # Async HTTP client for Microsoft Graph API
+
+# Configuration Management
+pydantic==2.5.3
+pydantic-settings==2.1.0   # Environment-based settings
+
+# Session Management
+itsdangerous==2.1.2        # Session security
+
+# Development Dependencies (optional)
+# Uncomment for development
+# pytest==7.4.4
+# pytest-asyncio==0.23.3
+# black==24.1.1
+# ruff==0.1.14
+# mypy==1.8.0
+
+# Production Server (use in production instead of uvicorn)
+# gunicorn==21.2.0         # Production WSGI server
+# uvicorn-worker==0.2.0    # Uvicorn worker for Gunicorn
+
+# Monitoring (optional, recommended for production)
+# sentry-sdk[fastapi]==1.40.0  # Error tracking
+# prometheus-fastapi-instrumentator==6.1.0  # Metrics
