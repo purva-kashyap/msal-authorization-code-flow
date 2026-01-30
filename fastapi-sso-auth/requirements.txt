@@ -2,31 +2,30 @@
 # Production-ready dependencies for Microsoft Entra ID OAuth2 flow
 
 # Web Framework
-fastapi==0.109.0
-uvicorn[standard]==0.27.0  # ASGI server with auto-reload and performance features
-python-multipart==0.0.6    # Form data parsing
+fastapi
+uvicorn[standard]
+python-multipart
 
 # MSAL (Microsoft Authentication Library)
-msal==1.26.0
+msal
 
 # Database (Async PostgreSQL)
-sqlalchemy[asyncio]==2.0.25
-asyncpg==0.29.0            # Async PostgreSQL driver
-psycopg2-binary==2.9.9     # Sync driver for migrations/admin tasks
+sqlalchemy[asyncio]
+asyncpg
 
 # Security & Encryption
-cryptography==42.0.0       # Fernet encryption for tokens
-python-jose[cryptography]==3.3.0  # JWT handling (optional, for future use)
+cryptography
+python-jose[cryptography]
 
 # HTTP Client (Async)
-httpx==0.26.0              # Async HTTP client for Microsoft Graph API
+httpx
 
 # Configuration Management
-pydantic==2.5.3
-pydantic-settings==2.1.0   # Environment-based settings
+pydantic
+pydantic-settings
 
 # Session Management
-itsdangerous==2.1.2        # Session security
+itsdangerous
 
 # Development Dependencies (optional)
 # Uncomment for development

@@ -139,28 +139,32 @@ async def get_all_users() -> List[Dict]:
     Returns:
         List of user information dictionaries
     """
-    async with get_db_session() as session:
-        result = await session.execute(
-            select(
-                UserToken.user_id,
-                UserToken.email,
-                UserToken.name,
-                UserToken.created_at,
-                UserToken.updated_at
-            ).order_by(UserToken.updated_at.desc())
-        )
-        users = result.all()
-        
-        return [
-            {
-                "user_id": user.user_id,
-                "email": user.email,
-                "name": user.name,
-                "created_at": user.created_at,
-                "updated_at": user.updated_at
-            }
-            for user in users
-        ]
+    try:
+        async with get_db_session() as session:
+            result = await session.execute(
+                select(
+                    UserToken.user_id,
+                    UserToken.email,
+                    UserToken.name,
+                    UserToken.created_at,
+                    UserToken.updated_at
+                ).order_by(UserToken.updated_at.desc())
+            )
+            users = result.all()
+            
+            return [
+                {
+                    "user_id": user.user_id,
+                    "email": user.email,
+                    "name": user.name,
+                    "created_at": user.created_at,
+                    "updated_at": user.updated_at
+                }
+                for user in users
+            ]
+    except Exception:
+        # Return empty list if database is not available
+        return []
 
 
 async def delete_user_tokens(user_id: str) -> bool:
@@ -192,6 +196,10 @@ async def get_user_count() -> int:
     Returns:
         Total user count
     """
-    async with get_db_session() as session:
-        result = await session.execute(select(func.count(UserToken.user_id)))
-        return result.scalar()
+    try:
+        async with get_db_session() as session:
+            result = await session.execute(select(func.count(UserToken.user_id)))
+            return result.scalar()
+    except Exception:
+        # Return 0 if database is not available
+        return 0

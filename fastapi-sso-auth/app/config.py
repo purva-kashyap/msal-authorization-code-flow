@@ -3,7 +3,7 @@ Configuration management using Pydantic Settings.
 All secrets loaded from environment variables.
 """
 from pydantic_settings import BaseSettings
-from pydantic import Field, validator
+from pydantic import Field, field_validator
 from typing import List
 from cryptography.fernet import Fernet
 
@@ -44,10 +44,17 @@ class Settings(BaseSettings):
     debug: bool = Field(default=False, description="Debug mode")
     
     # CORS
-    cors_origins: List[str] = Field(
-        default=["http://localhost:3000", "http://localhost:8000"],
-        description="Allowed CORS origins"
+    cors_origins: str = Field(
+        default="http://localhost:3000,http://localhost:8000",
+        description="Allowed CORS origins (comma-separated)"
     )
+    
+    @property
+    def cors_origins_list(self) -> List[str]:
+        """Get CORS origins as a list."""
+        if isinstance(self.cors_origins, str):
+            return [origin.strip() for origin in self.cors_origins.split(",")]
+        return self.cors_origins
     
     # Rate Limiting
     rate_limit_per_minute: int = Field(default=60, description="API rate limit per minute")
@@ -58,7 +65,8 @@ class Settings(BaseSettings):
         description="Refresh token if expires in less than this many seconds"
     )
     
-    @validator("encryption_key")
+    @field_validator("encryption_key", mode="before")
+    @classmethod
     def validate_encryption_key(cls, v):
         """Validate that encryption key is valid Fernet key."""
         try:

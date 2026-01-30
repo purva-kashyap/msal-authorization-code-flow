@@ -71,9 +71,24 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db():
     """Initialize database tables."""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    print("✓ PostgreSQL database initialized")
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        print("✓ PostgreSQL database initialized")
+    except Exception as e:
+        print(f"⚠️  Database connection failed: {e}")
+        print("⚠️  Running without database - some features will be disabled")
+        print("⚠️  To fix: Ensure PostgreSQL is running and database 'entra_tokens' exists")
+        # Don't raise - allow app to start without DB
+
+
+async def close_db():
+    """Close database connections."""
+    try:
+        await engine.dispose()
+        print("✓ Database connections closed")
+    except Exception:
+        pass  # Ignore errors on shutdown
 
 
 async def close_db():

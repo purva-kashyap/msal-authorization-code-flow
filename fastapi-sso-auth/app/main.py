@@ -2,6 +2,7 @@
 FastAPI SSO Authentication with Microsoft Entra ID
 Production-ready implementation with async support, encryption, and proper security.
 """
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, HTTPException, Depends, status
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,13 +25,41 @@ from app.services.token_service import (
     get_all_users, delete_user_tokens, get_user_count
 )
 
-# Initialize FastAPI app
+
+# ============================================
+# LIFESPAN CONTEXT MANAGER
+# ============================================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan event handler for startup and shutdown."""
+    # Startup
+    await init_db()
+    print("=" * 60)
+    print("FastAPI SSO Authentication Server - PRODUCTION READY")
+    print("=" * 60)
+    print(f"✓ Environment: {'Development' if settings.debug else 'Production'}")
+    print(f"✓ Encryption: Enabled")
+    print(f"✓ CORS Origins: {', '.join(settings.cors_origins_list)}")
+    print("=" * 60)
+    print(f"\n🌐 Server running at: http://localhost:{settings.port}")
+    print(f"📚 API Docs: http://localhost:{settings.port}/docs")
+    print("=" * 60)
+    
+    yield
+    
+    # Shutdown
+    await close_db()
+
+
+# Initialize FastAPI app with lifespan
 app = FastAPI(
     title="Microsoft Entra ID SSO Authentication",
     description="Production-ready OAuth2 authentication with encrypted token storage",
     version="2.0.0",
     docs_url="/docs" if settings.debug else None,  # Disable docs in production
     redoc_url="/redoc" if settings.debug else None,
+    lifespan=lifespan,
 )
 
 # Security middleware
@@ -39,7 +68,7 @@ security = HTTPBearer()
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["*"],
@@ -62,36 +91,25 @@ if not settings.debug:
         allowed_hosts=["*.yourdomain.com", "yourdomain.com"]
     )
 
-# Initialize MSAL
-msal_app = ConfidentialClientApplication(
-    settings.client_id,
-    authority=settings.authority,
-    client_credential=settings.client_secret
-)
+# Initialize MSAL lazily (only when credentials are valid)
+_msal_app = None
 
-
-# ============================================
-# LIFECYCLE EVENTS
-# ============================================
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize database on startup."""
-    await init_db()
-    print("=" * 60)
-    print("FastAPI SSO Authentication Server - PRODUCTION READY")
-    print("=" * 60)
-    print(f"✓ Environment: {'Development' if settings.debug else 'Production'}")
-    print(f"✓ Database: Connected")
-    print(f"✓ Encryption: Enabled")
-    print(f"✓ CORS Origins: {', '.join(settings.cors_origins)}")
-    print("=" * 60)
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Close database connections on shutdown."""
-    await close_db()
+def get_msal_app() -> ConfidentialClientApplication:
+    """Get or create MSAL application instance."""
+    global _msal_app
+    if _msal_app is None:
+        # Check if we have valid credentials
+        if settings.tenant_id == "00000000-0000-0000-0000-000000000000":
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Azure AD not configured. Please set CLIENT_ID, CLIENT_SECRET, and TENANT_ID in .env file"
+            )
+        _msal_app = ConfidentialClientApplication(
+            settings.client_id,
+            authority=settings.authority,
+            client_credential=settings.client_secret
+        )
+    return _msal_app
 
 
 # ============================================
@@ -252,6 +270,7 @@ async def home():
 async def onboard(request: Request):
     """Initiate the OAuth2 authorization code flow."""
     try:
+        msal_app = get_msal_app()
         flow = msal_app.initiate_auth_code_flow(
             scopes=settings.scopes,
             redirect_uri=settings.redirect_uri
@@ -272,11 +291,12 @@ async def onboard(request: Request):
             detail=str(e)
         )
 
-
 @app.get("/auth/callback", response_class=HTMLResponse)
 async def callback(request: Request):
     """Handle OAuth2 callback and exchange code for tokens."""
     try:
+        msal_app = get_msal_app()
+        flow = request.session.get("auth_flow")
         flow = request.session.get("auth_flow")
         
         if not flow:
@@ -491,10 +511,10 @@ async def view_tokens(user_id: str = Depends(get_current_user)):
         updated_at=user_data["updated_at"]
     )
 
-
 @app.post("/refresh", response_model=TokenResponse)
 async def refresh_token(user_id: str = Depends(get_current_user)):
     """Refresh the access token using the refresh token."""
+    msal_app = get_msal_app()
     user_data = await get_user_tokens(user_id)
     
     if not user_data:
@@ -578,17 +598,17 @@ async def health_check():
     """Health check endpoint for monitoring."""
     try:
         user_count = await get_user_count()
-        return HealthCheck(
-            status="healthy",
-            database="connected",
-            total_users=user_count,
-            timestamp=datetime.now().isoformat()
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Service unhealthy: {str(e)}"
-        )
+        db_status = "connected" if user_count >= 0 else "disconnected"
+    except Exception:
+        user_count = 0
+        db_status = "disconnected"
+    
+    return HealthCheck(
+        status="healthy",
+        database=db_status,
+        total_users=user_count,
+        timestamp=datetime.now().isoformat()
+    )
 
 
 # ============================================
