@@ -1,21 +1,16 @@
 """
-FastAPI SSO Authentication with Microsoft Entra ID
-Production-ready implementation with async support, encryption, and proper security.
+FastAPI SSO Authentication - API Routes
+
+All authentication and user management endpoints.
 """
-from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, HTTPException, Depends, status
+from fastapi import APIRouter, Request, HTTPException, Depends, status
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from starlette.middleware.sessions import SessionMiddleware
 from msal import ConfidentialClientApplication
 from datetime import datetime
 from typing import Optional
 import httpx
 
 from app.config import settings
-from app.database import init_db, close_db
 from app.models import (
     TokenInfo, TokenResponse, ErrorResponse, 
     HealthCheck, UserList, UserInfo
@@ -27,71 +22,16 @@ from app.services.token_service import (
 
 
 # ============================================
-# LIFESPAN CONTEXT MANAGER
+# CREATE API ROUTER
 # ============================================
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Lifespan event handler for startup and shutdown."""
-    # Startup
-    await init_db()
-    print("=" * 60)
-    print("FastAPI SSO Authentication Server - PRODUCTION READY")
-    print("=" * 60)
-    print(f"✓ Environment: {'Development' if settings.debug else 'Production'}")
-    print(f"✓ Encryption: Enabled")
-    print(f"✓ CORS Origins: {', '.join(settings.cors_origins_list)}")
-    print("=" * 60)
-    print(f"\n🌐 Server running at: http://localhost:{settings.port}")
-    print(f"📚 API Docs: http://localhost:{settings.port}/docs")
-    print("=" * 60)
-    
-    yield
-    
-    # Shutdown
-    await close_db()
+router = APIRouter()
 
 
-# Initialize FastAPI app with lifespan
-app = FastAPI(
-    title="Microsoft Entra ID SSO Authentication",
-    description="Production-ready OAuth2 authentication with encrypted token storage",
-    version="2.0.0",
-    docs_url="/docs" if settings.debug else None,  # Disable docs in production
-    redoc_url="/redoc" if settings.debug else None,
-    lifespan=lifespan,
-)
+# ============================================
+# MSAL CLIENT (LAZY INITIALIZATION)
+# ============================================
 
-# Security middleware
-security = HTTPBearer()
-
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "DELETE"],
-    allow_headers=["*"],
-)
-
-# Add session middleware
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=settings.secret_key,
-    session_cookie="entra_session",
-    max_age=3600,  # 1 hour
-    same_site="lax",
-    https_only=not settings.debug,  # HTTPS only in production
-)
-
-# Add trusted host middleware (security)
-if not settings.debug:
-    app.add_middleware(
-        TrustedHostMiddleware,
-        allowed_hosts=["*.yourdomain.com", "yourdomain.com"]
-    )
-
-# Initialize MSAL lazily (only when credentials are valid)
 _msal_app = None
 
 def get_msal_app() -> ConfidentialClientApplication:
@@ -136,7 +76,7 @@ async def get_current_user(request: Request) -> str:
 # ROUTES
 # ============================================
 
-@app.get("/", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
 async def home():
     """Home page with onboarding link."""
     total_users = await get_user_count()
@@ -266,7 +206,7 @@ async def home():
     return HTMLResponse(content=html)
 
 
-@app.get("/onboard")
+@router.get("/onboard")
 async def onboard(request: Request):
     """Initiate the OAuth2 authorization code flow."""
     try:
@@ -291,7 +231,7 @@ async def onboard(request: Request):
             detail=str(e)
         )
 
-@app.get("/auth/callback", response_class=HTMLResponse)
+@router.get("/auth/callback", response_class=HTMLResponse)
 async def callback(request: Request):
     """Handle OAuth2 callback and exchange code for tokens."""
     try:
@@ -424,7 +364,7 @@ async def callback(request: Request):
         )
 
 
-@app.get("/profile", response_model=dict)
+@router.get("/profile", response_model=dict)
 async def profile(user_id: str = Depends(get_current_user)):
     """Fetch user profile from Microsoft Graph using stored access token."""
     user_data = await get_user_tokens(user_id)
@@ -477,7 +417,7 @@ async def profile(user_id: str = Depends(get_current_user)):
             )
 
 
-@app.get("/tokens", response_model=TokenInfo)
+@router.get("/tokens", response_model=TokenInfo)
 async def view_tokens(user_id: str = Depends(get_current_user)):
     """View token info (masked) for current user."""
     user_data = await get_user_tokens(user_id)
@@ -511,7 +451,7 @@ async def view_tokens(user_id: str = Depends(get_current_user)):
         updated_at=user_data["updated_at"]
     )
 
-@app.post("/refresh", response_model=TokenResponse)
+@router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(user_id: str = Depends(get_current_user)):
     """Refresh the access token using the refresh token."""
     msal_app = get_msal_app()
@@ -555,7 +495,7 @@ async def refresh_token(user_id: str = Depends(get_current_user)):
     )
 
 
-@app.get("/admin/users", response_model=UserList)
+@router.get("/admin/users", response_model=UserList)
 async def admin_users():
     """
     Admin endpoint to view all registered users.
@@ -570,14 +510,14 @@ async def admin_users():
     )
 
 
-@app.post("/logout", response_model=TokenResponse)
+@router.post("/logout", response_model=TokenResponse)
 async def logout(request: Request):
     """Clear session (tokens remain in database)."""
     request.session.clear()
     return TokenResponse(message="Logged out successfully")
 
 
-@app.delete("/delete-account", response_model=TokenResponse)
+@router.delete("/delete-account", response_model=TokenResponse)
 async def delete_account(request: Request, user_id: str = Depends(get_current_user)):
     """Delete user account and tokens from database."""
     deleted = await delete_user_tokens(user_id)
@@ -593,7 +533,7 @@ async def delete_account(request: Request, user_id: str = Depends(get_current_us
     return TokenResponse(message="Account and tokens deleted successfully")
 
 
-@app.get("/health", response_model=HealthCheck)
+@router.get("/health", response_model=HealthCheck)
 async def health_check():
     """Health check endpoint for monitoring."""
     try:
@@ -611,29 +551,3 @@ async def health_check():
     )
 
 
-# ============================================
-# ERROR HANDLERS
-# ============================================
-
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    """Custom HTTP exception handler."""
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"error": exc.detail}
-    )
-
-
-@app.exception_handler(Exception)
-async def general_exception_handler(request: Request, exc: Exception):
-    """General exception handler for unhandled errors."""
-    # Log error here (use proper logging in production)
-    print(f"Unhandled error: {str(exc)}")
-    
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "error": "Internal server error",
-            "details": str(exc) if settings.debug else "An error occurred"
-        }
-    )
