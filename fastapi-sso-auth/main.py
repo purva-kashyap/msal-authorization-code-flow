@@ -50,8 +50,8 @@ app = FastAPI(
     title="Microsoft Entra ID SSO Authentication",
     description="Production-ready OAuth2 authentication with encrypted token storage",
     version="2.0.0",
-    docs_url="/docs" if settings.debug else None,
-    redoc_url="/redoc" if settings.debug else None,
+    docs_url="/docs",  # Always enable for now, disable in production
+    redoc_url="/redoc",
     lifespan=lifespan,
 )
 

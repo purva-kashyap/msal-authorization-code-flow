@@ -5,6 +5,7 @@
 fastapi
 uvicorn[standard]
 python-multipart
+jinja2
 
 # MSAL (Microsoft Authentication Library)
 msal

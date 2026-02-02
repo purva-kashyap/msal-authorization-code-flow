@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Onboarding Success{% endblock %}
+
+{% block content %}
+<div class="success">✓ Onboarding Successful!</div>
+<p>Your tokens have been encrypted and securely stored using FastAPI + PostgreSQL.</p>
+
+<div class="user-info">
+    <strong>User Information:</strong><br><br>
+    <strong>Name:</strong> {{ user_name }}<br>
+    <strong>Email:</strong> {{ user_email }}<br>
+    <strong>User ID:</strong> {{ user_id }}<br>
+    <br>
+    <strong>Token Status:</strong><br>
+    Access Token: ✓ Received & Encrypted<br>
+    Refresh Token: {{ refresh_status }}
+</div>
+
+<a href="/profile" class="btn">View Profile</a>
+<a href="/tokens" class="btn">Token Info</a>
+<a href="/" class="btn btn-secondary">Home</a>
+{% endblock %}

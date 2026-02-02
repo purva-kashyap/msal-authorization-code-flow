@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Microsoft Entra SSO - Home{% endblock %}
+
+{% block content %}
+<h1>Welcome to FastAPI SSO <span class="badge">PRODUCTION READY</span></h1>
+
+<div class="stats">
+    <strong>{{ total_users }}</strong>
+    <div>Registered Users</div>
+</div>
+
+<div class="info">
+    <p><strong>🚀 Production-Ready Features</strong></p>
+    <ul class="feature-list">
+        <li>Async/await for high performance</li>
+        <li>Pydantic validation for type safety</li>
+        <li>Encrypted token storage (Fernet)</li>
+        <li>PostgreSQL with async SQLAlchemy</li>
+        <li>Automatic API documentation (OpenAPI)</li>
+        <li>CORS protection enabled</li>
+        <li>Session security hardened</li>
+        <li>Environment-based configuration</li>
+    </ul>
+</div>
+
+<a href="/onboard" class="btn">Start Onboarding</a>
+<a href="/admin/users" class="btn btn-secondary">View Users (Admin)</a>
+<a href="/docs" class="btn btn-secondary">API Docs</a>
+{% endblock %}

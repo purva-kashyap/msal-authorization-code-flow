@@ -5,6 +5,7 @@ All authentication and user management endpoints.
 """
 from fastapi import APIRouter, Request, HTTPException, Depends, status
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
 from msal import ConfidentialClientApplication
 from datetime import datetime
 from typing import Optional
@@ -22,10 +23,11 @@ from app.services.token_service import (
 
 
 # ============================================
-# CREATE API ROUTER
+# CREATE API ROUTER AND TEMPLATES
 # ============================================
 
 router = APIRouter()
+templates = Jinja2Templates(directory="templates")
 
 
 # ============================================
@@ -77,133 +79,13 @@ async def get_current_user(request: Request) -> str:
 # ============================================
 
 @router.get("/", response_class=HTMLResponse)
-async def home():
+async def home(request: Request):
     """Home page with onboarding link."""
     total_users = await get_user_count()
-    
-    html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Microsoft Entra SSO - FastAPI</title>
-        <style>
-            body {{
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-                max-width: 900px;
-                margin: 50px auto;
-                padding: 20px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh;
-            }}
-            .container {{
-                background: white;
-                padding: 40px;
-                border-radius: 12px;
-                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            }}
-            h1 {{
-                color: #0078d4;
-                margin-bottom: 10px;
-            }}
-            .badge {{
-                display: inline-block;
-                background: #107c10;
-                color: white;
-                padding: 4px 12px;
-                border-radius: 12px;
-                font-size: 12px;
-                font-weight: bold;
-                margin-left: 10px;
-            }}
-            .btn {{
-                display: inline-block;
-                padding: 14px 28px;
-                background-color: #0078d4;
-                color: white;
-                text-decoration: none;
-                border-radius: 6px;
-                font-weight: 600;
-                margin-right: 10px;
-                transition: all 0.3s;
-            }}
-            .btn:hover {{
-                background-color: #005a9e;
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(0,120,212,0.4);
-            }}
-            .btn-secondary {{
-                background-color: #6c757d;
-            }}
-            .btn-secondary:hover {{
-                background-color: #5a6268;
-            }}
-            .info {{
-                background-color: #e7f3ff;
-                padding: 20px;
-                border-left: 4px solid #0078d4;
-                margin: 25px 0;
-                border-radius: 4px;
-            }}
-            .stats {{
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 25px;
-                border-radius: 8px;
-                margin: 25px 0;
-                text-align: center;
-            }}
-            .stats strong {{
-                font-size: 36px;
-                display: block;
-                margin-bottom: 5px;
-            }}
-            .feature-list {{
-                list-style: none;
-                padding: 0;
-            }}
-            .feature-list li {{
-                padding: 10px 0;
-                padding-left: 30px;
-                position: relative;
-            }}
-            .feature-list li:before {{
-                content: "✓";
-                position: absolute;
-                left: 0;
-                color: #107c10;
-                font-weight: bold;
-                font-size: 18px;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>Welcome to FastAPI SSO <span class="badge">PRODUCTION READY</span></h1>
-            <div class="stats">
-                <strong>{total_users}</strong>
-                <div>Registered Users</div>
-            </div>
-            <div class="info">
-                <p><strong>🚀 Production-Ready Features</strong></p>
-                <ul class="feature-list">
-                    <li>Async/await for high performance</li>
-                    <li>Pydantic validation for type safety</li>
-                    <li>Encrypted token storage (Fernet)</li>
-                    <li>PostgreSQL with async SQLAlchemy</li>
-                    <li>Automatic API documentation (OpenAPI)</li>
-                    <li>CORS protection enabled</li>
-                    <li>Session security hardened</li>
-                    <li>Environment-based configuration</li>
-                </ul>
-            </div>
-            <a href="/onboard" class="btn">Start Onboarding</a>
-            <a href="/admin/users" class="btn btn-secondary">View Users (Admin)</a>
-            <a href="/docs" class="btn btn-secondary">API Docs</a>
-        </div>
-    </body>
-    </html>
-    """
-    return HTMLResponse(content=html)
+    return templates.TemplateResponse("home.html", {
+        "request": request,
+        "total_users": total_users
+    })
 
 
 @router.get("/onboard")
@@ -281,79 +163,13 @@ async def callback(request: Request):
         
         refresh_status = "✓ Received" if refresh_token else "✗ Not received"
         
-        html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Onboarding Success</title>
-            <style>
-                body {{
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-                    max-width: 800px;
-                    margin: 50px auto;
-                    padding: 20px;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    min-height: 100vh;
-                }}
-                .container {{
-                    background: white;
-                    padding: 40px;
-                    border-radius: 12px;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-                }}
-                .success {{
-                    color: #107c10;
-                    font-size: 32px;
-                    margin-bottom: 20px;
-                    font-weight: bold;
-                }}
-                .user-info {{
-                    background-color: #f8f9fa;
-                    padding: 20px;
-                    border-radius: 8px;
-                    margin: 25px 0;
-                    border-left: 4px solid #107c10;
-                }}
-                .btn {{
-                    display: inline-block;
-                    padding: 12px 24px;
-                    background-color: #0078d4;
-                    color: white;
-                    text-decoration: none;
-                    border-radius: 6px;
-                    margin-top: 10px;
-                    margin-right: 10px;
-                    font-weight: 600;
-                    transition: all 0.3s;
-                }}
-                .btn:hover {{
-                    background-color: #005a9e;
-                    transform: translateY(-2px);
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="success">✓ Onboarding Successful!</div>
-                <p>Your tokens have been encrypted and securely stored using FastAPI + PostgreSQL.</p>
-                <div class="user-info">
-                    <strong>User Information:</strong><br><br>
-                    <strong>Name:</strong> {user_name}<br>
-                    <strong>Email:</strong> {user_email}<br>
-                    <strong>User ID:</strong> {user_id}<br>
-                    <br>
-                    <strong>Token Status:</strong><br>
-                    Access Token: ✓ Received & Encrypted<br>
-                    Refresh Token: {refresh_status}
-                </div>
-                <a href="/profile" class="btn">View Profile</a>
-                <a href="/tokens" class="btn">Token Info</a>
-                <a href="/" class="btn">Home</a>
-            </div>
-        </body>
-        </html>
-        """
-        return HTMLResponse(content=html)
+        return templates.TemplateResponse("callback_success.html", {
+            "request": request,
+            "user_name": user_name,
+            "user_email": user_email,
+            "user_id": user_id,
+            "refresh_status": refresh_status
+        })
         
     except HTTPException:
         raise
