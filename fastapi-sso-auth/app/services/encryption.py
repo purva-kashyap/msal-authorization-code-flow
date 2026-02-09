@@ -14,8 +14,10 @@ def encrypt_token(token: str) -> str | None:
     Returns:
         Encrypted token as string
     """
-    if not token:
+    if token is None:
         return None
+    if token == "":
+        return ""
     return settings.cipher.encrypt(token.encode()).decode()
 
 
@@ -29,6 +31,8 @@ def decrypt_token(encrypted_token: str) -> str | None:
     Returns:
         Decrypted plain text token
     """
-    if not encrypted_token:
+    if encrypted_token is None:
         return None
+    if encrypted_token == "":
+        return ""
     return settings.cipher.decrypt(encrypted_token.encode()).decode()
