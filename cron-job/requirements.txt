@@ -1,0 +1,43 @@
+# Meeting Transcript Processor - Cron Job
+# Required dependencies for automated meeting processing
+
+# Database
+sqlalchemy[asyncio]>=2.0.0
+asyncpg>=0.29.0
+
+# Database migrations
+alembic>=1.13.0
+
+# HTTP Client
+httpx>=0.26.0
+
+# Configuration
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# Security & Encryption
+cryptography>=41.0.0
+
+# Retry logic
+tenacity>=8.2.0
+
+# Structured logging
+structlog>=24.1.0
+python-json-logger>=2.0.0
+
+# Rate limiting
+aiolimiter>=1.1.0
+
+# Monitoring
+prometheus-client>=0.19.0
+
+# OpenAI for summaries
+openai>=1.10.0
+
+# Utilities
+python-dotenv>=1.0.0
+aiofiles>=23.2.0
+
+# Development
+pytest>=8.0.0
+pytest-asyncio>=0.23.0

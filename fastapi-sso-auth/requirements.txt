@@ -16,7 +16,6 @@ asyncpg
 
 # Security & Encryption
 cryptography
-python-jose[cryptography]
 
 # HTTP Client (Async)
 httpx

@@ -1,0 +1,7 @@
+{
+    "python.testing.pytestArgs": [
+        "fastapi-sso-auth"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
+}
