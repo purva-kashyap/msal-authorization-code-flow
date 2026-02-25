@@ -1,0 +1,17 @@
+# MCP-based meeting transcript processor
+
+# Database
+sqlalchemy[asyncio]>=2.0.0
+asyncpg>=0.29.0
+
+# HTTP and settings
+httpx>=0.26.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+python-dotenv>=1.0.0
+
+# Security and utilities
+cryptography>=41.0.0
+
+# Optional summary generation
+openai>=1.10.0
