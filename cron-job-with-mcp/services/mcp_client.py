@@ -1,72 +1,62 @@
 """
-JSON-RPC MCP client.
+FastMCP-based MCP client.
 """
 from __future__ import annotations
 
-import asyncio
-from typing import Any, Dict, Optional
+import json
+import logging
+from typing import Any, Dict
 
-import httpx
+from fastmcp import Client
 
 from config import settings
 from exceptions import MCPToolError
 
+logger = logging.getLogger(__name__)
+
 
 class MCPClient:
-    """Reusable JSON-RPC client for MCP tool calls with pooling and throttling."""
+    """MCP client using FastMCP's Client with SSE transport."""
 
-    def __init__(self, server_url: str, auth_token: Optional[str] = None):
+    def __init__(self, server_url: str):
         self.server_url = server_url
-        self.auth_token = auth_token
-        self._request_id = 0
-        self._id_lock = asyncio.Lock()
-        self._semaphore = asyncio.Semaphore(settings.mcp_max_concurrency)
-        self._client = httpx.AsyncClient(
-            timeout=settings.mcp_timeout_seconds,
-            limits=httpx.Limits(
-                max_connections=settings.mcp_max_connections,
-                max_keepalive_connections=settings.mcp_max_keepalive_connections,
-            ),
-        )
+        self._client = Client(server_url)
+        self._connected = False
+
+    async def connect(self) -> None:
+        """Open the connection to the MCP server."""
+        if not self._connected:
+            await self._client.__aenter__()
+            self._connected = True
+            logger.info("Connected to MCP server at %s", self.server_url)
 
     async def aclose(self) -> None:
-        """Close underlying HTTP client."""
-        await self._client.aclose()
-
-    async def _next_request_id(self) -> int:
-        async with self._id_lock:
-            self._request_id += 1
-            return self._request_id
+        """Close the connection to the MCP server."""
+        if self._connected:
+            await self._client.__aexit__(None, None, None)
+            self._connected = False
+            logger.info("Disconnected from MCP server")
 
     async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """Call a single MCP tool via JSON-RPC."""
-        request_id = await self._next_request_id()
-        payload = {
-            "jsonrpc": "2.0",
-            "id": request_id,
-            "method": "tools/call",
-            "params": {
-                "name": tool_name,
-                "arguments": arguments,
-            },
-        }
+        """Call a single MCP tool via FastMCP client."""
+        if not self._connected:
+            await self.connect()
 
-        headers = {"Content-Type": "application/json"}
-        if self.auth_token:
-            headers["Authorization"] = f"Bearer {self.auth_token}"
+        try:
+            result = await self._client.call_tool(tool_name, arguments)
+        except Exception as exc:
+            raise MCPToolError(f"MCP tool '{tool_name}' error: {exc}") from exc
 
-        async with self._semaphore:
-            try:
-                response = await self._client.post(self.server_url, headers=headers, json=payload)
-                response.raise_for_status()
-                data = response.json()
-            except httpx.HTTPError as exc:
-                raise MCPToolError(f"MCP tool '{tool_name}' HTTP error: {exc}") from exc
+        # FastMCP call_tool returns a list of content objects.
+        # Parse the first TextContent item as JSON, or return raw text.
+        for content in result:
+            if hasattr(content, "text"):
+                try:
+                    parsed = json.loads(content.text)
+                    if isinstance(parsed, dict):
+                        return parsed
+                    return {"data": parsed}
+                except (json.JSONDecodeError, TypeError):
+                    return {"data": content.text}
 
-        if "error" in data:
-            raise MCPToolError(f"MCP tool '{tool_name}' failed: {data['error']}")
-
-        result = data.get("result", data)
-        if isinstance(result, dict):
-            return result
         return {"data": result}

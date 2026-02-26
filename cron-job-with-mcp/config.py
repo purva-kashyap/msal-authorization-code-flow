@@ -23,11 +23,7 @@ class Settings(BaseSettings):
 
     mcp_server_url: str = Field(
         default="http://localhost:8001/mcp",
-        description="MCP server endpoint that exposes Teams/Zoom tools",
-    )
-    mcp_auth_token: Optional[str] = Field(
-        default=None,
-        description="Optional bearer token for MCP server",
+        description="MCP server endpoint (SSE URL for FastMCP)",
     )
 
     mcp_teams_list_meetings_tool: str = "teams_list_recorded_meetings"
@@ -37,23 +33,6 @@ class Settings(BaseSettings):
     mcp_zoom_list_recordings_tool: str = "zoom_list_recordings"
     mcp_zoom_get_transcript_tool: str = "zoom_get_meeting_transcript"
     mcp_zoom_post_chat_tool: str = "zoom_post_chat_message"
-
-    mcp_timeout_seconds: float = Field(
-        default=60.0,
-        description="HTTP timeout used for MCP tool calls",
-    )
-    mcp_max_concurrency: int = Field(
-        default=50,
-        description="Max in-flight MCP requests from this process",
-    )
-    mcp_max_connections: int = Field(
-        default=200,
-        description="HTTP connection pool max connections for MCP server",
-    )
-    mcp_max_keepalive_connections: int = Field(
-        default=100,
-        description="HTTP keep-alive pool size for MCP server",
-    )
 
     class Config:
         env_file = ".env"

@@ -32,7 +32,7 @@ class MeetingProcessor:
         if settings.openai_api_key:
             self.summary_service = SummaryService(settings.openai_api_key, settings.openai_model)
 
-        self.mcp_client = MCPClient(settings.mcp_server_url, settings.mcp_auth_token)
+        self.mcp_client = MCPClient(settings.mcp_server_url)
         self.teams_service = TeamsMCPService(self.mcp_client)
         self.zoom_service = ZoomMCPService(self.mcp_client)
 
