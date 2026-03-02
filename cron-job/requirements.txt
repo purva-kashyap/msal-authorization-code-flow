@@ -11,6 +11,9 @@ alembic>=1.13.0
 # HTTP Client
 httpx>=0.26.0
 
+# Microsoft identity (MSAL)
+msal>=1.28.0
+
 # Configuration
 pydantic>=2.5.0
 pydantic-settings>=2.1.0

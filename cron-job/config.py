@@ -37,17 +37,23 @@ class Settings(BaseSettings):
     # Processing settings
     lookback_hours: int = Field(default=24, description="Hours to look back for new meetings")
     max_meetings_per_user: int = Field(default=50, description="Max meetings to process per user per run")
-    
+    user_concurrency: int = Field(default=10, description="Max users processed concurrently")
+    batch_size: int = Field(default=100, description="Number of users fetched per DB batch")
+
     # Retry settings
     max_retries: int = Field(default=3, description="Maximum number of retries for failed operations")
     retry_backoff_base: float = Field(default=2.0, description="Base for exponential backoff")
     retry_max_wait: int = Field(default=60, description="Maximum wait time between retries in seconds")
-    
+
     # Rate limiting
-    graph_api_rate_limit: int = Field(default=100, description="Microsoft Graph API rate limit per minute")
-    zoom_api_rate_limit: int = Field(default=60, description="Zoom API rate limit per second")
-    openai_rate_limit: int = Field(default=10, description="OpenAI API rate limit per minute")
-    
+    graph_api_rate_limit: int = Field(default=100, description="Microsoft Graph API requests per minute")
+    zoom_recording_rate_limit: int = Field(default=8, description="Zoom recording API requests per second")
+    zoom_general_rate_limit: int = Field(default=60, description="Zoom general API requests per second")
+    openai_rate_limit: int = Field(default=10, description="OpenAI API requests per minute")
+
+    # LLM
+    max_transcript_chars: int = Field(default=60000, description="Truncate transcripts beyond this length before sending to LLM")
+
     # Debug
     debug: bool = Field(default=False, description="Enable debug logging")
     

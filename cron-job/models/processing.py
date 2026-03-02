@@ -7,19 +7,25 @@ from models.base import Base
 
 
 class UserProcessingStatus(Base):
-    """Track last processing time for each user."""
-    
+    """Track last successful processing time for each user per platform."""
+
     __tablename__ = 'user_processing_status'
-    
+
     user_id = Column(String(255), primary_key=True, index=True)
-    last_teams_check = Column(DateTime, nullable=True, index=True)
-    last_zoom_check = Column(DateTime, nullable=True, index=True)
+    last_teams_processed_at = Column(DateTime, nullable=True, index=True,
+                                     comment="Last successful Teams processing end-time")
+    last_zoom_processed_at = Column(DateTime, nullable=True, index=True,
+                                    comment="Last successful Zoom processing end-time")
     is_active = Column(Boolean, default=True, index=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     def __repr__(self):
-        return f"<UserProcessingStatus(user_id='{self.user_id}', last_teams_check='{self.last_teams_check}')>"
+        return (
+            f"<UserProcessingStatus(user_id='{self.user_id}', "
+            f"last_teams={self.last_teams_processed_at}, "
+            f"last_zoom={self.last_zoom_processed_at})>"
+        )
 
 
 class ProcessingLog(Base):
