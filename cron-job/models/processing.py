@@ -2,7 +2,7 @@
 Processing status and logging models.
 """
 from sqlalchemy import Column, String, Integer, Text, Boolean, DateTime, Float
-from datetime import datetime
+from datetime import datetime, timezone
 from models.base import Base
 
 
@@ -12,13 +12,13 @@ class UserProcessingStatus(Base):
     __tablename__ = 'user_processing_status'
 
     user_id = Column(String(255), primary_key=True, index=True)
-    last_teams_processed_at = Column(DateTime, nullable=True, index=True,
+    last_teams_processed_at = Column(DateTime(timezone=True), nullable=True, index=True,
                                      comment="Last successful Teams processing end-time")
-    last_zoom_processed_at = Column(DateTime, nullable=True, index=True,
+    last_zoom_processed_at = Column(DateTime(timezone=True), nullable=True, index=True,
                                     comment="Last successful Zoom processing end-time")
     is_active = Column(Boolean, default=True, index=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     def __repr__(self):
         return (
@@ -34,7 +34,7 @@ class ProcessingLog(Base):
     __tablename__ = 'processing_logs'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    run_timestamp = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+    run_timestamp = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
     status = Column(String(50), nullable=False)  # success, partial, failed
     users_processed = Column(Integer, default=0)
     meetings_found = Column(Integer, default=0)
@@ -42,7 +42,7 @@ class ProcessingLog(Base):
     errors_count = Column(Integer, default=0)
     duration_seconds = Column(Float, nullable=True)
     error_details = Column(Text, nullable=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     
     def __repr__(self):
         return f"<ProcessingLog(id={self.id}, run_timestamp='{self.run_timestamp}', status='{self.status}')>"

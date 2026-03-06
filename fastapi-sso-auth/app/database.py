@@ -3,7 +3,7 @@ Database configuration and session management using SQLAlchemy async.
 """
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import Column, String, Float
+from sqlalchemy import Column, String, Float, Text
 from datetime import datetime
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -39,8 +39,8 @@ class UserToken(Base):
     user_id = Column(String(255), primary_key=True, index=True)
     email = Column(String(255), nullable=True, index=True)
     name = Column(String(255), nullable=True)
-    access_token = Column(String(4096), nullable=False)  # Encrypted
-    refresh_token = Column(String(4096), nullable=True)  # Encrypted
+    access_token = Column(Text, nullable=False)  # Encrypted
+    refresh_token = Column(Text, nullable=True)  # Encrypted
     expires_at = Column(Float, nullable=False)
     created_at = Column(String(50), nullable=False)
     updated_at = Column(String(50), nullable=False)

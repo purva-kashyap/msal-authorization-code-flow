@@ -88,20 +88,6 @@ async def home(request: Request):
     })
 
 
-@router.get("/debug/config")
-async def debug_config():
-    """Debug endpoint to show current OAuth configuration."""
-    return {
-        "redirect_uri_configured": settings.redirect_uri,
-        "client_id": settings.client_id[:8] + "..." if settings.client_id else "Not set",
-        "tenant_id": settings.tenant_id[:8] + "..." if settings.tenant_id else "Not set",
-        "authority": settings.authority,
-        "port": settings.port,
-        "scopes": settings.scopes,
-        "note": "Check your Azure Portal → App Registrations → Authentication → Redirect URIs"
-    }
-
-
 @router.get("/onboard")
 async def onboard(request: Request):
     """Initiate the OAuth2 authorization code flow."""
@@ -118,14 +104,6 @@ async def onboard(request: Request):
                 detail=f"Failed to initiate auth flow: {flow.get('error_description')}"
             )
         
-        # DEBUG: Log what redirect_uri is being sent to Microsoft
-        print("=" * 60)
-        print("🔍 DEBUG: OAuth Flow Initiated")
-        print(f"📍 Redirect URI configured: {settings.redirect_uri}")
-        print(f"📍 Redirect URI in flow: {flow.get('redirect_uri')}")
-        print(f"🔗 Auth URL being sent: {flow['auth_uri']}")
-        print("=" * 60)
-        
         request.session["auth_flow"] = flow
         return RedirectResponse(url=flow["auth_uri"])
         
@@ -141,6 +119,7 @@ async def callback(request: Request):
     try:
         msal_app = get_msal_app()
         flow = request.session.get("auth_flow")
+        flow = request.session.get("auth_flow")
         
         if not flow:
             raise HTTPException(
@@ -150,14 +129,6 @@ async def callback(request: Request):
         
         # Get query parameters
         query_params = dict(request.query_params)
-        
-        # DEBUG: Log what's happening during token exchange
-        print("=" * 60)
-        print("🔍 DEBUG: Token Exchange")
-        print(f"📍 Redirect URI from flow: {flow.get('redirect_uri')}")
-        print(f"🌐 Actual callback URL: {request.url}")
-        print(f"📦 Query params: {list(query_params.keys())}")
-        print("=" * 60)
         
         # Exchange code for token
         result = msal_app.acquire_token_by_auth_code_flow(flow, query_params)

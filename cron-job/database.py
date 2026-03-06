@@ -44,8 +44,8 @@ class UserToken(Base):
     user_id = Column(String(255), primary_key=True, index=True)
     email = Column(String(255), nullable=True, index=True)
     name = Column(String(255), nullable=True)
-    access_token = Column(String(4096), nullable=False)  # Encrypted
-    refresh_token = Column(String(4096), nullable=True)  # Encrypted
+    access_token = Column(Text, nullable=False)  # Encrypted
+    refresh_token = Column(Text, nullable=True)  # Encrypted
     expires_at = Column(Float, nullable=False)
     created_at = Column(String(50), nullable=False)
     updated_at = Column(String(50), nullable=False)

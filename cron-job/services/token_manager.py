@@ -120,6 +120,7 @@ class TokenManager:
                 updated_at=datetime.utcnow().isoformat(),
             )
         )
+        await session.commit()
         logger.info("tokens_persisted for user %s", user_id)
 
     # ------------------------------------------------------------------
